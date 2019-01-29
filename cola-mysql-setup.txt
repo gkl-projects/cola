@@ -1,0 +1,80 @@
+             
+                                    cola-mysql-setup
+                                -------------------------
+      # apt-get update
+      # apt-get install apt-transport-https ca-certificates curl software-properties-common
+      # curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+      # apt-key fingerprint 0EBFCD88
+      # add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" 
+      # apt-get update
+      # apt-cache madison docker-ce
+      # apt-get install docker-ce
+      # apt-get install docker-ce=18.03.0~ce-0~ubuntu
+         
+                Now mysql on docker
+              -------------------------
+
+             # docker pull mysql/mysql-server:latest
+             # docker run --name=mysql1 -d mysql/mysql-server:latest
+             # docker logs mysql1 2>&1 | grep GENERATED
+             # docker exec -it mysql1 mysql -uroot -puJelat]YjokSIRJ4zipb@LUjYPW ----->here replace with newly generated pwd
+             # ALTER USER 'root'@'localhost' IDENTIFIED BY 'passw0rd';  ---->give what pwd as u like
+
+
+                 Now swarm on docker
+              ------------------------------
+  [root@master] # docker swarm init --advertise-addr 172.30.0.247 ---> replace with master instance ip
+  [master]# docker swarm join-token manager
+
+                 Repate this in both nodes:- 
+               ------------------------------
+
+ [slave 1] # docker swarm join --token SWMTKN-1-25e5noazy7vmj4g21ldk3o0xrrvwur6ujgf71524j5vz5mnw4x-1ikhksgdzgps96p9e6u6l9tq4 172.30.0.247:2377 *replace with master ip
+ [slave 2] # docker swarm join --token SWMTKN-1-25e5noazy7vmj4g21ldk3o0xrrvwur6ujgf71524j5vz5mnw4x-1ikhksgdzgps96p9e6u6l9tq4 172.30.0.247:2377 *replace with master ip
+              
+                 *now both joind into slaves as master
+                  
+                   Now create network
+                in master node run below command
+           ----------------------------------------
+[master]# docker network create --driver overlay mysql-trng-net ---> name as u like
+
+[master]# curl -w "\n" 'https://discovery.etcd.io/new?size=1'
+
+https://discovery.etcd.io/aba4b6170916f8210544199c2e454294
+
+[master]# docker service create --name etcd --replicas 1 --network mysql-trng-net -p 2379:2379 -p 2380:2380 -p 4001:4001 -p 7001:7001 elcolio/etcd:latest -name etcd -discovery=https://discovery.etcd.io/aba4b6170916f8210544199c2e454294 ---rreplace with newly generated
+
+[master]# docker service inspect etcd -f "{{ .Endpoint.VirtualIPs }}"
+
+[{l7hrjxqt5rcu2modb8i1v6nku 10.255.0.5/16} {ia6nn53ctjynbvnmwbmzqw8v8 10.0.0.5/24}]
+
+              Deploying Database Cluster:
+        -------------------------------------                                   **********************---> replace with created network name                      *************--> replace ip with newly generated range 
+[master]# docker service create --name mysql-galera --replicas 3 -p 3306:3306 --network mysql-trng-net --env MYSQL_ROOT_PASSWORD=passw0rd --env DISCOVERY_SERVICE=10.0.0.5:2379 --env XTRABACKUP_PASSWORD=passw0rd --env CLUSTER_NAME=galera perconalab/percona-xtradb-cluster:5.6
+
+[master]# docker service inspect mysql-galera -f "{{ .Endpoint.VirtualIPs }}"
+[{l7hrjxqt5rcu2modb8i1v6nku 10.255.0.7/16} {ia6nn53ctjynbvnmwbmzqw8v8 10.0.0.7/24}]
+          
+              Deploying Applications
+           --------------------------
+
+[master]# docker service create --name wordpress --replicas 2 -p 80:80 --network mysql-trng-net --env WORDPRESS_DB_HOST=mysql-galera --env WORDPRESS_DB_USER=root --env WORDPRESS_DB_PASSWORD=passw0rd wordpress
+
+[master]# docker service inspect wordpress -f "{{ .Endpoint.VirtualIPs }}"
+
+[{l7hrjxqt5rcu2modb8i1v6nku 10.255.1.29/16} {ia6nn53ctjynbvnmwbmzqw8v8 10.0.0.38/24}]
+
+
+
+
+
+
+
+
+
+
+
+
+
+

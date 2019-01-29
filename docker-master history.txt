@@ -1,0 +1,49 @@
+ vi /etc/ssh/sshd_config
+    2  service ssh restart
+    3  passwd ubuntu
+    4  exit
+    5  cd
+    6  clear
+    7  docker images
+    8  docker ps
+    9  ping -c 5 172.30.0.236
+   10  ping -c 5 172.30.0.216
+   11  ifconfig
+   12  ping -c 5 172.18.0.1
+   13  apt-get update
+   14  apt-get install apt-transport-https ca-certificates curl software-properties-common
+   15  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+   16  apt-key fingerprint 0EBFCD88
+   17  add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" 
+   18  apt-get update
+   19  apt-cache madison docker-ce
+   20  apt-get install docker-ce
+   21  apt-get install docker-ce=18.03.0~ce-0~ubuntu
+   22  docker pull mysql/mysql-server:latest
+   23  docker run --name=mysql1 -d mysql/mysql-server:latest
+   24  docker logs mysql1 2>&1 | grep GENERATED
+   25  docker exec -it mysql1 mysql -uroot -p
+   26  docker swarm init --advertise-addr 172.30.0.247
+   27  docker swarm join-token manager
+   28  docker node ls
+   29  docker network ls
+   30  docker network create --driver overlay mysql-trng-net
+   31  docker network ls
+   32  curl -w "\n" 'https://discovery.etcd.io/new?size=1'
+   33  docker service create --name etcd --replicas 1 --network mysql-trng-net -p 2379:2379 -p 2380:2380 -p 4001:4001 -p 7001:7001 elcolio/etcd:latest -name etcd -discovery=https://discovery.etcd.io/aba4b6170916f8210544199c2e454294
+   34  docker service inspect etcd -f "{{ .Endpoint.VirtualIPs }}"
+   35  docker service create --name mysql-galera --replicas 3 -p 3306:3306 --network mysql-trng-net --env MYSQL_ROOT_PASSWORD=passw0rd --env DISCOVERY_SERVICE=10.0.0.5:2379 --env XTRABACKUP_PASSWORD=passw0rd --env CLUSTER_NAME=galera perconalab/percona-xtradb-cluster:5.6
+   36  docker service ls
+   37  docker service ps mysql-galera
+   38  cat /etc/hosts
+   39  clear
+   40  docker service ps mysql-galera
+   41  docker node ls
+   42  docker network ls
+   43  docker service ps mysql-galera
+   44  ifconfig
+   45  while true; do mysql -uroot -pmypassword -h127.0.0.1 -P3306 -NBe 'select @@wsrep_node_address'; sleep 1; done
+   46  clear
+   47  docker service inspect mysql-galera -f "{{ .Endpoint.VirtualIPs }}"
+   48  docker service create --name wordpress --replicas 2 -p 80:80 --network mysql-trng-net --env WORDPRESS_DB_HOST=mysql-galera --env WORDPRESS_DB_USER=root --env WORDPRESS_DB_PASSWORD=passw0rd wordpress
+   49  docker service inspect wordpress -f "{{ .Endpoint.VirtualIPs }}"

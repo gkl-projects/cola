@@ -1,0 +1,20 @@
+   1  apt-get update
+   2  apt-get install apt-transport-https ca-certificates curl software-properties-common
+   3  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+   4  apt-key fingerprint 0EBFCD88
+   5  add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" 
+   6  apt-get update
+   7  apt-cache madison docker-ce
+   8  apt-get install docker-ce
+   9  apt-get install docker-ce=18.03.0~ce-0~ubuntu
+   10  docker pull mysql/mysql-server:latest
+   11  docker run --name=mysql1 -d mysql/mysql-server:latest
+   12  docker logs mysql1 2>&1 | grep GENERATED
+   13  docker exec -it mysql1 mysql -uroot -p
+   14  docker images
+   15  docker logs mysql1
+   16  docker logs mysql1 2>&1 | grep GENERATED
+   17  docker exec -it mysql1 mysql -uroot -pEbev+4PfagTOjq4gIzkugx4qyB(
+   18 docker exec -it mysql1 mysql -uroot -p
+   19 docker swarm join --token SWMTKN-1-25e5noazy7vmj4g21ldk3o0xrrvwur6ujgf71524j5vz5mnw4x-1ikhksgdzgps96p9e6u6l9tq4 172.30.0.247:2377
+
